@@ -38,17 +38,14 @@ func (p *RedisProvider) GetOneFromHash(ctx context.Context, hash string, key str
 	return &data, err
 }
 
-func (p *RedisProvider) GetAllKeysFromHash(ctx context.Context, hash string) ([]string, error) {
+func (p *RedisProvider) GetAllFromHash(ctx context.Context, hash string) (map[string]string, error) {
 	data, err := p.client.HGetAll(ctx, hash).Result()
 
 	if err != nil {
 		return nil, err
 	}
-	var keys []string
-	for k, _ := range data {
-		keys = append(keys, k)
-	}
-	return keys, nil
+
+	return data, nil
 }
 
 func (p *RedisProvider) DeleteFromHash(ctx context.Context, hash string, key string) error {
@@ -59,4 +56,41 @@ func (p *RedisProvider) DeleteFromHash(ctx context.Context, hash string, key str
 		return err
 	}
 	return nil
+}
+
+func (p *RedisProvider) AddToSet(ctx context.Context, set string, value string) error {
+	_, err := p.client.SAdd(ctx, set, value).Result()
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *RedisProvider) DeleteFromSet(ctx context.Context, set string, value string) error {
+	_, err := p.client.SRem(ctx, set, value).Result()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *RedisProvider) CheckMemberOfHash(ctx context.Context, hash string, key string) (bool, error) {
+	exists, err := p.client.HExists(ctx, hash, key).Result()
+
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
+func (p *RedisProvider) CheckMemberOfSet(ctx context.Context, set string, value interface{}) (bool, error) {
+	exists, err := p.client.SIsMember(ctx, set, value).Result()
+
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
 }
